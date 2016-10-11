@@ -98,15 +98,16 @@ systemctl restart docker
 Ansible, в процессе инсталляции, разворачивает ряд Dcoker образов из внешних репозитариев. Но, связь с внешними репозитариями часто бывает плохой. В результате загрузка образов затягивается и Ansible вылетает по таймауту. Во избежание этой ситуации можно зарание загрузить на каждую ноду все необходимые образы:
 
 ```bash
+docker pull cockpit/kubernetes:latest
+docker pull openshift/origin-docker-registry:v1.3.0
+docker pull openshift/origin-haproxy-router:v1.3.0
+docker pull openshift/origin-deployer:v1.3.0
+docker pull openshift/origin-pod:v1.3.0
+docker pull openshift/origin-sti-builder:v1.3.0
 docker pull openshift/origin-metrics-deployer:latest
 docker pull openshift/origin-metrics-cassandra:latest
 docker pull openshift/origin-metrics-heapster:latest
 docker pull openshift/origin-metrics-hawkular-metrics:latest
-docker pull openshift/origin-docker-registry:v1.3.0
-docker pull cockpit/kubernetes:latest
-docker pull openshift/origin-haproxy-router:v1.3.0
-docker pull openshift/origin-deployer:v1.3.0
-docker pull openshift/origin-pod:v1.3.0
 ```
 
 Только для этого придётся настраивать прокси в Dcoker (см. ранее).
