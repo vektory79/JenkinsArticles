@@ -57,11 +57,11 @@ index 000e46e..68ec15b 100644
 
 В NFS шаре нужно предварительно создать два каталога с правами на запись: **metrics** и **registry**.
 
-== LDAP ==
+## LDAP
 
 OpenShift поддерживает различные методы аутентификации. В частности LDAP. Для его подключения нужно у Ansuble прописать следующий параметр (тут и далее пароли изменены):
 
-```
+```ini
 openshift_master_identity_providers=[{'name': 'krista_ldap_provider', 'challenge': 'true', 'login': 'true', 'kind': 'LDAPPasswordIdentityProvider', 'attributes': {'id': ['dn'], 'email': ['mail'], 'name': ['cn'], 'preferredUsername': ['uid']}, 'bindDN': 'user@domain.org', 'bindPassword': 'password', 'ca': '', 'insecure': 'false', 'url': 'ldap://dc8a.domain.org:389/dc=domain,dc=org?sAMAccountName'}]
 ```
 
