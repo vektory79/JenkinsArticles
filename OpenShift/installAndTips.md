@@ -218,3 +218,146 @@ oadm policy add-cluster-role-to-user cluster-admin <user>
 ```bash
 oadm policy add-cluster-role-to-user cluster-admin "CN=Пупкин Иван Иванович,OU=USERS,OU=Локальная сеть,DC=domain,DC=org"
 ```
+
+## Повышение прав для контейнеров
+
+OpenShift старается обеспечить максимальную безопасность. В результате по умолчанию проектам запрещено деплоить образы, которые стартуют под root. Ну и старается подпихнуть целый ряд ограничений на уровне cgroups и SELinux:
+
+```yaml
+      securityContext:
+        capabilities:
+          drop:
+            - KILL
+            - MKNOD
+            - SETGID
+            - SETUID
+            - SYS_CHROOT
+        privileged: false
+        seLinuxOptions:
+          level: 's0:c8,c2'
+        runAsUser: 1000060000
+```
+
+Если в какой-то доверенный проект необходимо задеплоить образ, требующий расширенных прав, то тогда нужно выдать разрешение на этот проект:
+
+```bash
+oc project <project name>
+oadm policy add-scc-to-user privileged -z default
+```
+
+Так же при деплое необходимо явно указать набор необходимых разрешений:
+
+```yaml
+ securityContext:
+   runAsUser: 0
+```
+
+Поный Deployment Config может выглядеть так:
+
+```yaml
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: kallithea
+  namespace: test
+  selfLink: /oapi/v1/namespaces/test/deploymentconfigs/kallithea
+  uid: 207c561c-8fd2-11e6-ba53-1eaef84320e2
+  resourceVersion: '136117'
+  generation: 4
+  creationTimestamp: '2016-10-11T16:45:33Z'
+  labels:
+    app: kallithea
+  annotations:
+    openshift.io/generated-by: OpenShiftWebConsole
+spec:
+  strategy:
+    type: Rolling
+    rollingParams:
+      updatePeriodSeconds: 1
+      intervalSeconds: 1
+      timeoutSeconds: 600
+      maxUnavailable: 25%
+      maxSurge: 25%
+    resources:
+  triggers:
+    -
+      type: ConfigChange
+    -
+      type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - kallithea
+        from:
+          kind: ImageStreamTag
+          namespace: test
+          name: 'kallithea:latest'
+        lastTriggeredImage: 'docker-registry.krista.ru:8021/krista/kallithea@sha256:43d98110f7164b1d84682f32ab003abbf7efe4715fa6566d517e71579cf46de4'
+  replicas: 1
+  test: false
+  selector:
+    app: kallithea
+    deploymentconfig: kallithea
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: kallithea
+        deploymentconfig: kallithea
+      annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+    spec:
+      volumes:
+        -
+          name: kallithea-1
+          emptyDir:
+      containers:
+        -
+          name: kallithea
+          image: 'docker-registry.krista.ru:8021/krista/kallithea@sha256:43d98110f7164b1d84682f32ab003abbf7efe4715fa6566d517e71579cf46de4'
+          ports:
+            -
+              containerPort: 5000
+              protocol: TCP
+          env:
+            -
+              name: PUID
+              value: '1000'
+            -
+              name: PGID
+              value: '1000'
+            -
+              name: KALLITHEA_LANG
+              value: ru
+          resources:
+          volumeMounts:
+            -
+              name: kallithea-1
+              mountPath: /config/kallithea
+          terminationMessagePath: /dev/termination-log
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext:
+        runAsUser: 0
+status:
+  latestVersion: 3
+  observedGeneration: 4
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+  details:
+    message: 'caused by a config change'
+    causes:
+      -
+        type: ConfigChange
+```
+
+# Прочее
+
+* [Хорошая обзорная презентация](http://docs.huihoo.com/openshift/OpenShift-3-Technical-Architecture.pdf)
+* [OpenShift xPaaS version 3. «Hello, world»](https://habrahabr.ru/post/312348/)
+* [OpenShift v3. Часть II. Продолжение знакомства. ROR4](https://habrahabr.ru/post/312492/)
+* [OpenShift v 3 III. OpenShift Origin 1.3](https://habrahabr.ru/post/312778/)
+* [OpenShift + Jenkins + Bitbucket, непрерывная интеграция и публикация из коробки](https://habrahabr.ru/post/313146/)
