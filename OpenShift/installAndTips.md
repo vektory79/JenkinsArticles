@@ -205,6 +205,8 @@ cat haproxy.config | grep "stats auth"
 
 В консоли быдет выведен логин/парол для входа на страницу статистики HAProxy.
 
+Подробная информация: [Monitoring Routers](https://docs.openshift.org/latest/admin_guide/router.html)
+
 ## Heketi
 
 [Руководство по установке](https://github.com/heketi/heketi/wiki/OpenShift-Integration---Project-Aplo).
@@ -328,6 +330,16 @@ export HEKETI_CLI_SERVER=http://deploy-heketi-aplo.test-os-master.domain.org
 Нужно обратить внимание на тот момент, что в секции `manage` должны указываться доменные имена узлов, а в `storage` - IP адреса этих же узлов.
 
 # Использование
+
+## Редактор по умолчанию
+
+Команда `oc edit` открывает ресурсы OpenShift на редактирование. Если хочется указать конкретный редактор, то можно установить переменную окружения. Например:
+
+```bash
+export EDITOR=/urs/bin/kate
+```
+
+Теперь все конфигурации будут открываться в редакторе Kate.
 
 ## Подключение к стороннему Docker репозитарию
 
@@ -491,8 +503,13 @@ status:
 
 # Прочее
 
+## Статьи
 * [Хорошая обзорная презентация](http://docs.huihoo.com/openshift/OpenShift-3-Technical-Architecture.pdf)
 * [OpenShift xPaaS version 3. «Hello, world»](https://habrahabr.ru/post/312348/)
 * [OpenShift v3. Часть II. Продолжение знакомства. ROR4](https://habrahabr.ru/post/312492/)
 * [OpenShift v 3 III. OpenShift Origin 1.3](https://habrahabr.ru/post/312778/)
 * [OpenShift + Jenkins + Bitbucket, непрерывная интеграция и публикация из коробки](https://habrahabr.ru/post/313146/)
+
+## Заметки
+
+* [Object Types](https://docs.openshift.org/latest/cli_reference/basic_cli_operations.html#object-types)
