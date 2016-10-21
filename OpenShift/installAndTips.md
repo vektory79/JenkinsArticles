@@ -205,6 +205,128 @@ cat haproxy.config | grep "stats auth"
 
 В консоли быдет выведен логин/парол для входа на страницу статистики HAProxy.
 
+## Heketi
+
+[Руководство по установке](https://github.com/heketi/heketi/wiki/OpenShift-Integration---Project-Aplo).
+
+**Важно:** Для Heketi на каждом узле необходим неразмеченный (физический?) том размером более 32 Гб, т.к. 32 Гб - тот размер, который Heketi забирает для своих технических нужд.
+
+Далее личный опыт установки на стенд:
+
+### Устанавливаем GlusterFS
+
+```bash
+yum install centos-release-gluster -y
+yum install glusterfs-server glusterfs-client -y
+
+```
+
+На каждом узле прописываем в файл `/etc/sysconfig/iptables` строки:
+
+```
+-A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 24007 -j ACCEPT
+-A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 24008 -j ACCEPT
+-A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2222 -j ACCEPT
+-A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m multiport --dports 49152:49251 -j ACCEPT
+```
+
+Перезапускаем iptables:
+
+```bash
+systemctl restart iptables
+```
+
+### Устанавливаем Heketi
+
+На каждом узле устанавливаем пакеты:
+
+```bash
+yum install -y heketi-templates heketi-client
+```
+
+Далее двигаемся по [руководству](https://github.com/heketi/heketi/wiki/OpenShift-Integration---Project-Aplo#deployment).
+
+### Замечания
+
+#### Установка GlusterFS контейнеров сразу на все ноды:
+
+```bash
+for node in $(oc get nodes --no-headers | awk "{print \$1}"); do
+    oc process glusterfs -v GLUSTERFS_NODE=$node | oc create -f -
+done
+```
+
+#### Сервер по умолчанию
+
+Чтобы не вводить каждый раз имя сервера при работае с heketi-cli, можно установить переменную окружения:
+
+```bash
+export HEKETI_CLI_SERVER=http://deploy-heketi-aplo.test-os-master.domain.org
+```
+
+#### Пример топологии
+
+```json
+{
+    "clusters": [
+        {
+            "nodes": [
+                {
+                    "node": {
+                        "hostnames": {
+                            "manage": [
+                                "test-os-master.domain.org"
+                            ],
+                            "storage": [
+                                "10.0.202.254"
+                            ]
+                        },
+                        "zone": 1
+                    },
+                    "devices": [
+                        "/dev/sdd"
+                    ]
+                },
+                {
+                    "node": {
+                        "hostnames": {
+                            "manage": [
+                                "test-os-node1.domain.org"
+                            ],
+                            "storage": [
+                                "10.0.203.1"
+                            ]
+                        },
+                        "zone": 1
+                    },
+                    "devices": [
+                        "/dev/sdd"
+                    ]
+                },
+                {
+                    "node": {
+                        "hostnames": {
+                            "manage": [
+                                "test-os-node2.domain.org"
+                            ],
+                            "storage": [
+                                "10.0.203.2"
+                            ]
+                        },
+                        "zone": 1
+                    },
+                    "devices": [
+                        "/dev/sdd"
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+
+Нужно обратить внимание на тот момент, что в секции `manage` должны указываться доменные имена узлов, а в `storage` - IP адреса эьих же узлов.
+
 # Использование
 
 ## Подключение к стороннему Docker репозитарию
@@ -305,7 +427,7 @@ spec:
           kind: ImageStreamTag
           namespace: test
           name: 'kallithea:latest'
-        lastTriggeredImage: 'docker-registry.krista.ru:8021/krista/kallithea@sha256:43d98110f7164b1d84682f32ab003abbf7efe4715fa6566d517e71579cf46de4'
+        lastTriggeredImage: 'docker-registry.domain.org:8021/domain/kallithea@sha256:43d98110f7164b1d84682f32ab003abbf7efe4715fa6566d517e71579cf46de4'
   replicas: 1
   test: false
   selector:
@@ -327,7 +449,7 @@ spec:
       containers:
         -
           name: kallithea
-          image: 'docker-registry.krista.ru:8021/krista/kallithea@sha256:43d98110f7164b1d84682f32ab003abbf7efe4715fa6566d517e71579cf46de4'
+          image: 'docker-registry.domain.org:8021/domain/kallithea@sha256:43d98110f7164b1d84682f32ab003abbf7efe4715fa6566d517e71579cf46de4'
           ports:
             -
               containerPort: 5000
