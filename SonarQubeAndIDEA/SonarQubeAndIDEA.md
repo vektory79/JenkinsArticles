@@ -94,6 +94,8 @@ SonarQube умеет выгружать эти файлы. Они находят
 
 ![Checkstyle2]
 
+В случае ошибки "The Checkstyle rules file could not be parsed", а именно "SuppressionCommentFilter is not allowed as a child in Checker" нужно понизить версию Checkstyle в настройках плагина до 8.0.
+
 Так же не забываем отметить вновь добавленную конфигурацию как активную в таблице.
 
 Всё теперь можно переходить в окно CheckStyle и запускать анализ (верхняя отмеченная кнопка):
